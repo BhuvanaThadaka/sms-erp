@@ -1,0 +1,1546 @@
+{
+  "info": {
+    "_postman_id": "school-erp-collection-v1",
+    "name": "🏫 School ERP — Real-Time Student Teacher Tracking System",
+    "description": "Complete API collection for the School ERP backend.\n\n## Setup\n1. Import this collection into Postman\n2. Set the `baseUrl` variable to `http://localhost:3000/api/v1`\n3. Use **Auth → Login (Admin)** first — token auto-saves\n4. All subsequent requests use the saved `{{token}}` automatically\n\n## Roles\n- **ADMIN** — Full access\n- **TEACHER** — Academic operations\n- **STUDENT** — Own data only\n\n## Variables (auto-set by tests)\n`token`, `adminToken`, `teacherToken`, `studentToken`, `userId`, `classId`, `attendanceId`, `sessionId`, `noteId`, `scheduleId`, `eventId`, `reportId`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "adminToken", "value": "", "type": "string" },
+    { "key": "teacherToken", "value": "", "type": "string" },
+    { "key": "studentToken", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "teacherId", "value": "", "type": "string" },
+    { "key": "studentId", "value": "", "type": "string" },
+    { "key": "classId", "value": "", "type": "string" },
+    { "key": "attendanceId", "value": "", "type": "string" },
+    { "key": "sessionId", "value": "", "type": "string" },
+    { "key": "noteId", "value": "", "type": "string" },
+    { "key": "scheduleId", "value": "", "type": "string" },
+    { "key": "eventId", "value": "", "type": "string" },
+    { "key": "reportId", "value": "", "type": "string" },
+    { "key": "academicYear", "value": "2024-2025", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "description": "Authentication endpoints — register, login, get profile",
+      "item": [
+        {
+          "name": "Register (Student - Default Role)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.token) {",
+                  "  pm.collectionVariables.set('token', res.data.token);",
+                  "  pm.collectionVariables.set('studentToken', res.data.token);",
+                  "  pm.collectionVariables.set('studentId', res.data.user._id);",
+                  "  pm.collectionVariables.set('userId', res.data.user._id);",
+                  "}",
+                  "pm.test('Registration successful', () => pm.response.to.have.status(201));",
+                  "pm.test('Token returned', () => pm.expect(res.data.token).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"student@school.com\",\n  \"password\": \"Student@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.token) {",
+                  "  pm.collectionVariables.set('token', res.data.token);",
+                  "  pm.collectionVariables.set('adminToken', res.data.token);",
+                  "  pm.collectionVariables.set('userId', res.data.user._id);",
+                  "}",
+                  "pm.test('Login successful', () => pm.response.to.have.status(201));",
+                  "pm.test('Token received', () => pm.expect(res.data.token).to.be.a('string'));",
+                  "pm.test('Role is ADMIN', () => pm.expect(res.data.user.role).to.eql('ADMIN'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@school.com\",\n  \"password\": \"Admin@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Teacher)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.token) {",
+                  "  pm.collectionVariables.set('teacherToken', res.data.token);",
+                  "  pm.collectionVariables.set('teacherId', res.data.user._id);",
+                  "}",
+                  "pm.test('Login successful', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teacher@school.com\",\n  \"password\": \"Teacher@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.token) {",
+                  "  pm.collectionVariables.set('studentToken', res.data.token);",
+                  "  pm.collectionVariables.set('studentId', res.data.user._id);",
+                  "}",
+                  "pm.test('Login successful', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@school.com\",\n  \"password\": \"Student@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Profile returned', () => pm.response.to.have.status(200));",
+                  "pm.test('Has email', () => pm.expect(pm.response.json().data.user.email).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Login - Wrong Password (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Error response', () => pm.expect(pm.response.json().success).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@school.com\",\n  \"password\": \"wrongpassword\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Users",
+      "description": "User management — create, list, update, deactivate",
+      "item": [
+        {
+          "name": "Create Teacher (Admin only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('teacherId', res.data._id);",
+                  "}",
+                  "pm.test('Teacher created', () => pm.response.to.have.status(201));",
+                  "pm.test('Role is TEACHER', () => pm.expect(res.data.role).to.eql('TEACHER'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Sarah\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"teacher@school.com\",\n  \"password\": \"Teacher@123\",\n  \"role\": \"TEACHER\",\n  \"phone\": \"+1-555-0101\",\n  \"employeeId\": \"EMP001\",\n  \"joinDate\": \"2024-01-15\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Student (Admin only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('studentId', res.data._id);",
+                  "}",
+                  "pm.test('Student created', () => pm.response.to.have.status(201));",
+                  "pm.test('Role is STUDENT', () => pm.expect(res.data.role).to.eql('STUDENT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Smith\",\n  \"email\": \"alice.smith@school.com\",\n  \"password\": \"Student@123\",\n  \"role\": \"STUDENT\",\n  \"phone\": \"+1-555-0202\",\n  \"enrollmentNumber\": \"STU2024001\",\n  \"dateOfBirth\": \"2008-05-15\",\n  \"joinDate\": \"2024-08-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Admin (Admin only)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Robert\",\n  \"lastName\": \"Admin\",\n  \"email\": \"admin@school.com\",\n  \"password\": \"Admin@123\",\n  \"role\": \"ADMIN\",\n  \"phone\": \"+1-555-0001\",\n  \"employeeId\": \"ADM001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users"
+          }
+        },
+        {
+          "name": "Get All Teachers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users?role=TEACHER",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [{ "key": "role", "value": "TEACHER" }]
+            }
+          }
+        },
+        {
+          "name": "Get All Students",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users?role=STUDENT",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [{ "key": "role", "value": "STUDENT" }]
+            }
+          }
+        },
+        {
+          "name": "Get My Profile (me)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Updated successfully', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/{{userId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1-555-9999\",\n  \"address\": \"123 Main Street, Springfield, IL 62701\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Students by Class",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/class/{{classId}}/students"
+          }
+        },
+        {
+          "name": "Deactivate User (Admin only)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Student Accessing Another Student (Should Fail 403)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + pm.collectionVariables.get('studentToken') });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Access denied with 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/users/000000000000000000000001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏛️ Classes",
+      "description": "Class/grade management — create, assign teachers, view",
+      "item": [
+        {
+          "name": "Create Class",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('classId', res.data._id);",
+                  "}",
+                  "pm.test('Class created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/classes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grade 10 - Section A\",\n  \"grade\": \"10\",\n  \"section\": \"A\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"room\": \"Room 101\",\n  \"maxStudents\": 35\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Class (Grade 9)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/classes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grade 9 - Section B\",\n  \"grade\": \"9\",\n  \"section\": \"B\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"room\": \"Room 202\",\n  \"maxStudents\": 30\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Classes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Array returned', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/classes?academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["classes"],
+              "query": [{ "key": "academicYear", "value": "{{academicYear}}" }]
+            }
+          }
+        },
+        {
+          "name": "Get Class by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/classes/{{classId}}"
+          }
+        },
+        {
+          "name": "Update Class",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/classes/{{classId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room\": \"Room 105\",\n  \"maxStudents\": 40\n}"
+            }
+          }
+        },
+        {
+          "name": "Assign Teacher to Class",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/classes/{{classId}}/assign-teacher",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teacherId\": \"{{teacherId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Assign Class Teacher (set classTeacher)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/classes/{{classId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classTeacher\": \"{{teacherId}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "✅ Attendance",
+      "description": "Real-time attendance marking — single, bulk, summaries",
+      "item": [
+        {
+          "name": "Mark Attendance (Single Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('attendanceId', res.data._id);",
+                  "}",
+                  "pm.test('Attendance marked', () => pm.response.to.have.status(201));",
+                  "pm.test('Status is PRESENT', () => pm.expect(res.data.status).to.eql('PRESENT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/attendance/mark",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"classId\": \"{{classId}}\",\n  \"status\": \"PRESENT\",\n  \"date\": \"2025-01-15\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"remarks\": \"On time\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mark Attendance - ABSENT",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/attendance/mark",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"classId\": \"{{classId}}\",\n  \"status\": \"ABSENT\",\n  \"date\": \"2025-01-16\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"remarks\": \"Not informed\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mark Attendance - LATE",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/attendance/mark",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"classId\": \"{{classId}}\",\n  \"status\": \"LATE\",\n  \"date\": \"2025-01-17\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"remarks\": \"Arrived 15 minutes late\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Bulk Mark Attendance (Whole Class)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Bulk attendance marked', () => pm.response.to.have.status(201));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/attendance/bulk-mark",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"{{classId}}\",\n  \"date\": \"2025-01-20\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"records\": [\n    {\n      \"studentId\": \"{{studentId}}\",\n      \"status\": \"PRESENT\",\n      \"remarks\": \"Present and attentive\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Attendance (by Date)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/attendance?classId={{classId}}&date=2025-01-15",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance"],
+              "query": [
+                { "key": "classId", "value": "{{classId}}" },
+                { "key": "date", "value": "2025-01-15" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Attendance (by Month)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/attendance?classId={{classId}}&month=2025-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance"],
+              "query": [
+                { "key": "classId", "value": "{{classId}}" },
+                { "key": "month", "value": "2025-01" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Attendance (by Academic Year)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/attendance?studentId={{studentId}}&academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance"],
+              "query": [
+                { "key": "studentId", "value": "{{studentId}}" },
+                { "key": "academicYear", "value": "{{academicYear}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Student Attendance Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Summary returned', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data;",
+                  "pm.test('Has percentage', () => pm.expect(data.percentage).to.be.a('number'));",
+                  "pm.test('Has totals', () => pm.expect(data.total).to.be.a('number'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/attendance/student/{{studentId}}/summary?academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "student", "{{studentId}}", "summary"],
+              "query": [{ "key": "academicYear", "value": "{{academicYear}}" }]
+            }
+          }
+        },
+        {
+          "name": "Get Class Attendance Stats (by Date)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Stats returned', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data;",
+                  "pm.test('Has present count', () => pm.expect(data.present).to.be.a('number'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/attendance/class/{{classId}}/stats?date=2025-01-15",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "class", "{{classId}}", "stats"],
+              "query": [{ "key": "date", "value": "2025-01-15" }]
+            }
+          }
+        },
+        {
+          "name": "Student Views Own Attendance (OK)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/attendance"
+          }
+        },
+        {
+          "name": "Update Attendance (Re-mark Same Date)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/attendance/mark",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"classId\": \"{{classId}}\",\n  \"status\": \"LATE\",\n  \"date\": \"2025-01-15\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"remarks\": \"Updated: arrived late after all\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Sessions",
+      "description": "Teaching sessions — create, view, update with materials",
+      "item": [
+        {
+          "name": "Create Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('sessionId', res.data._id);",
+                  "}",
+                  "pm.test('Session created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/sessions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"{{classId}}\",\n  \"topic\": \"Introduction to Algebra\",\n  \"description\": \"Covered variables, expressions, and basic equations. Students practiced solving linear equations.\",\n  \"sessionDate\": \"2025-01-15\",\n  \"duration\": 60,\n  \"academicYear\": \"{{academicYear}}\",\n  \"materials\": [\n    \"https://drive.google.com/file/algebra-intro.pdf\",\n    \"https://drive.google.com/file/worksheet-1.pdf\"\n  ],\n  \"learningObjectives\": [\n    \"Understand variables and constants\",\n    \"Solve simple linear equations\",\n    \"Apply algebra to word problems\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Session 2",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/sessions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"{{classId}}\",\n  \"topic\": \"Quadratic Equations\",\n  \"description\": \"Introduced quadratic formula and graphing parabolas.\",\n  \"sessionDate\": \"2025-01-22\",\n  \"duration\": 90,\n  \"academicYear\": \"{{academicYear}}\",\n  \"materials\": [\"https://drive.google.com/file/quadratics.pdf\"],\n  \"learningObjectives\": [\"Understand ax²+bx+c=0\", \"Apply quadratic formula\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Sessions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Sessions returned', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/sessions?classId={{classId}}&academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["sessions"],
+              "query": [
+                { "key": "classId", "value": "{{classId}}" },
+                { "key": "academicYear", "value": "{{academicYear}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Session by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}"
+          }
+        },
+        {
+          "name": "Get Sessions by Teacher",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/sessions?teacherId={{teacherId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["sessions"],
+              "query": [{ "key": "teacherId", "value": "{{teacherId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Update Session",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/sessions/{{sessionId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Introduction to Algebra (Revised)\",\n  \"description\": \"Updated: also covered factoring and simplification.\",\n  \"duration\": 75,\n  \"materials\": [\n    \"https://drive.google.com/file/algebra-intro.pdf\",\n    \"https://drive.google.com/file/worksheet-1.pdf\",\n    \"https://drive.google.com/file/extra-practice.pdf\"\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📄 Notes",
+      "description": "Class notes and study materials management",
+      "item": [
+        {
+          "name": "Upload Note",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('noteId', res.data._id);",
+                  "}",
+                  "pm.test('Note created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/notes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"{{classId}}\",\n  \"title\": \"Algebra Chapter 1 Notes\",\n  \"description\": \"Complete notes covering variables, expressions, and linear equations from Chapter 1.\",\n  \"fileUrl\": \"https://drive.google.com/file/d/abc123/view\",\n  \"fileName\": \"algebra-chapter1.pdf\",\n  \"fileSize\": 2048576,\n  \"subject\": \"Mathematics\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"sessionId\": \"{{sessionId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload Note (No Session Link)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/notes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"{{classId}}\",\n  \"title\": \"Physics Formula Sheet\",\n  \"description\": \"Quick reference for all physics formulas.\",\n  \"fileUrl\": \"https://drive.google.com/file/d/xyz789/view\",\n  \"fileName\": \"physics-formulas.pdf\",\n  \"fileSize\": 512000,\n  \"subject\": \"Physics\",\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Notes by Class",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Notes returned', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/notes/class/{{classId}}"
+          }
+        },
+        {
+          "name": "Get Notes by Class and Subject",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notes/class/{{classId}}?subject=Mathematics",
+              "host": ["{{baseUrl}}"],
+              "path": ["notes", "class", "{{classId}}"],
+              "query": [{ "key": "subject", "value": "Mathematics" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Note (Admin/Teacher)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/notes/{{noteId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Schedule",
+      "description": "Weekly class scheduling and rescheduling",
+      "item": [
+        {
+          "name": "Create Schedule Entry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('scheduleId', res.data._id);",
+                  "}",
+                  "pm.test('Schedule created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/schedule",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"{{classId}}\",\n  \"teacher\": \"{{teacherId}}\",\n  \"subject\": \"Mathematics\",\n  \"dayOfWeek\": \"MONDAY\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"10:00\",\n  \"room\": \"Room 101\",\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Schedule - Tuesday Physics",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/schedule",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"{{classId}}\",\n  \"teacher\": \"{{teacherId}}\",\n  \"subject\": \"Physics\",\n  \"dayOfWeek\": \"TUESDAY\",\n  \"startTime\": \"11:00\",\n  \"endTime\": \"12:00\",\n  \"room\": \"Lab 201\",\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Schedule - Wednesday Chemistry",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/schedule",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"{{classId}}\",\n  \"teacher\": \"{{teacherId}}\",\n  \"subject\": \"Chemistry\",\n  \"dayOfWeek\": \"WEDNESDAY\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"room\": \"Chem Lab\",\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Class Schedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Schedule returned', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/schedule/class/{{classId}}?academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["schedule", "class", "{{classId}}"],
+              "query": [{ "key": "academicYear", "value": "{{academicYear}}" }]
+            }
+          }
+        },
+        {
+          "name": "Get Teacher Schedule",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/schedule/teacher/{{teacherId}}?academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["schedule", "teacher", "{{teacherId}}"],
+              "query": [{ "key": "academicYear", "value": "{{academicYear}}" }]
+            }
+          }
+        },
+        {
+          "name": "Teacher Gets Own Schedule",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/schedule/my?academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["schedule", "my"],
+              "query": [{ "key": "academicYear", "value": "{{academicYear}}" }]
+            }
+          }
+        },
+        {
+          "name": "Reschedule Class",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/schedule/{{scheduleId}}/reschedule",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rescheduledDate\": \"2025-01-27\",\n  \"rescheduleReason\": \"Teacher attending professional development workshop on original date\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Schedule Entry (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/schedule/{{scheduleId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🗓️ Events",
+      "description": "Academic events — exams, holidays, meetings, activities",
+      "item": [
+        {
+          "name": "Create Exam Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('eventId', res.data._id);",
+                  "}",
+                  "pm.test('Event created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Q1 Mathematics Mid-Term Examination\",\n  \"description\": \"Mid-term examination covering Algebra, Geometry, and Statistics from Q1 curriculum.\",\n  \"type\": \"EXAM\",\n  \"startDate\": \"2025-02-10\",\n  \"endDate\": \"2025-02-10\",\n  \"applicableClasses\": [\"{{classId}}\"],\n  \"isAllClasses\": false,\n  \"venue\": \"Examination Hall A\",\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Holiday Event (All Classes)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Republic Day Holiday\",\n  \"description\": \"School closed for Republic Day national holiday.\",\n  \"type\": \"HOLIDAY\",\n  \"startDate\": \"2025-01-26\",\n  \"endDate\": \"2025-01-26\",\n  \"isAllClasses\": true,\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Parent-Teacher Meeting",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Q1 Parent-Teacher Conference\",\n  \"description\": \"Quarterly parent-teacher meeting to discuss student progress and Q1 reports.\",\n  \"type\": \"MEETING\",\n  \"startDate\": \"2025-03-05\",\n  \"endDate\": \"2025-03-06\",\n  \"isAllClasses\": true,\n  \"venue\": \"School Auditorium\",\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Special Activity",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Annual Science Fair\",\n  \"description\": \"Students present their science projects. Open to parents and public.\",\n  \"type\": \"ACTIVITY\",\n  \"startDate\": \"2025-03-20\",\n  \"endDate\": \"2025-03-21\",\n  \"isAllClasses\": true,\n  \"venue\": \"Main Grounds\",\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Events",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Events returned', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events?academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"],
+              "query": [{ "key": "academicYear", "value": "{{academicYear}}" }]
+            }
+          }
+        },
+        {
+          "name": "Get Events in Date Range",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events?startDate=2025-01-01&endDate=2025-03-31&academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"],
+              "query": [
+                { "key": "startDate", "value": "2025-01-01" },
+                { "key": "endDate", "value": "2025-03-31" },
+                { "key": "academicYear", "value": "{{academicYear}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Events for Specific Class",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events?classId={{classId}}&academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"],
+              "query": [
+                { "key": "classId", "value": "{{classId}}" },
+                { "key": "academicYear", "value": "{{academicYear}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Event by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/events/{{eventId}}"
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/events/{{eventId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"venue\": \"Examination Hall B\",\n  \"description\": \"Updated: Examination moved to Hall B. Same timings apply.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Event (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/events/{{eventId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Reports",
+      "description": "Quarterly report generation with PDF download",
+      "item": [
+        {
+          "name": "Generate Q1 Report (Single Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('reportId', res.data._id);",
+                  "}",
+                  "pm.test('Report generated', () => pm.response.to.have.status(201));",
+                  "pm.test('Has attendance %', () => pm.expect(res.data.attendancePercentage).to.be.a('number'));",
+                  "pm.test('Has PDF URL', () => pm.expect(res.data.pdfUrl).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/reports/generate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"classId\": \"{{classId}}\",\n  \"quarter\": \"Q1\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"teacherRemarks\": \"Alice has shown excellent progress in Mathematics and Physics. She actively participates in class discussions and consistently completes assignments on time. Her problem-solving skills are commendable.\",\n  \"participationSummary\": \"High participation in class activities. Led group projects. Volunteered for science fair demonstration.\",\n  \"overallPerformance\": \"EXCELLENT\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Generate Q2 Report",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/reports/generate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"classId\": \"{{classId}}\",\n  \"quarter\": \"Q2\",\n  \"academicYear\": \"{{academicYear}}\",\n  \"teacherRemarks\": \"Good performance in Q2. Needs to improve attendance.\",\n  \"participationSummary\": \"Average class participation. Submitted all assignments.\",\n  \"overallPerformance\": \"GOOD\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Bulk Generate Q1 Reports (Whole Class)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Bulk generation ran', () => pm.response.to.have.status(201));",
+                  "pm.test('Returns array of results', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/reports/bulk-generate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"{{classId}}\",\n  \"quarter\": \"Q3\",\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Reports",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Reports returned', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reports?academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"],
+              "query": [{ "key": "academicYear", "value": "{{academicYear}}" }]
+            }
+          }
+        },
+        {
+          "name": "Get Reports by Student",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reports?studentId={{studentId}}&academicYear={{academicYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"],
+              "query": [
+                { "key": "studentId", "value": "{{studentId}}" },
+                { "key": "academicYear", "value": "{{academicYear}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Reports by Quarter",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reports?quarter=Q1&classId={{classId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"],
+              "query": [
+                { "key": "quarter", "value": "Q1" },
+                { "key": "classId", "value": "{{classId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Report by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reports/{{reportId}}"
+          }
+        },
+        {
+          "name": "Student Views Own Report (OK)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/reports"
+          }
+        },
+        {
+          "name": "Duplicate Report (Should Fail 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Conflict returned', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/reports/generate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"classId\": \"{{classId}}\",\n  \"quarter\": \"Q1\",\n  \"academicYear\": \"{{academicYear}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔍 Audit Logs",
+      "description": "System audit trail — Admin access only",
+      "item": [
+        {
+          "name": "Get All Audit Logs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Logs returned', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/audit-logs"
+          }
+        },
+        {
+          "name": "Filter Logs - Attendance Actions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs?action=ATTENDANCE_MARKED",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit-logs"],
+              "query": [{ "key": "action", "value": "ATTENDANCE_MARKED" }]
+            }
+          }
+        },
+        {
+          "name": "Filter Logs - Report Generation",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs?action=REPORT_GENERATED",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit-logs"],
+              "query": [{ "key": "action", "value": "REPORT_GENERATED" }]
+            }
+          }
+        },
+        {
+          "name": "Filter Logs - by Entity",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs?entityType=Attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit-logs"],
+              "query": [{ "key": "entityType", "value": "Attendance" }]
+            }
+          }
+        },
+        {
+          "name": "Filter Logs - Date Range",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs?from=2025-01-01&to=2025-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit-logs"],
+              "query": [
+                { "key": "from", "value": "2025-01-01" },
+                { "key": "to", "value": "2025-01-31" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter Logs - by Performer",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs?performedBy={{teacherId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit-logs"],
+              "query": [{ "key": "performedBy", "value": "{{teacherId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Teacher Accessing Audit Logs (Should Fail 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Forbidden for teachers', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": "{{baseUrl}}/audit-logs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛡️ Security & Edge Cases",
+      "description": "Tests for auth, role enforcement, and validation",
+      "item": [
+        {
+          "name": "No Token (Should Fail 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Unauthorized without token', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/users"
+          }
+        },
+        {
+          "name": "Invalid Token (Should Fail 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid token rejected', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer invalid.token.here" }],
+            "url": "{{baseUrl}}/users"
+          }
+        },
+        {
+          "name": "Student Creates User (Should Fail 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Student cannot create users', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Hack\",\n  \"lastName\": \"Attempt\",\n  \"email\": \"hack@test.com\",\n  \"password\": \"pass1234\",\n  \"role\": \"ADMIN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Missing Required Fields - Validation (Should Fail 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Validation fails with 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error response', () => pm.expect(pm.response.json().success).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"notvalidemail\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Duplicate Email Register (Should Fail 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Conflict on duplicate email', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Duplicate\",\n  \"lastName\": \"User\",\n  \"email\": \"admin@school.com\",\n  \"password\": \"SomePass123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Unknown Route (Should Fail 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 on unknown route', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/nonexistent-route"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "id": "school-erp-environment",
+  "name": "🏫 School ERP - Local Development",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "teacherToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "studentToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "teacherId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "studentId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "classId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "attendanceId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "noteId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "scheduleId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "academicYear",
+      "value": "2024-2025",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}
