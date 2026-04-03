@@ -10,20 +10,40 @@ import { Role } from '../common/enums';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { AuditAction } from '../common/enums';
 
+import { MailService } from '../mail/mail.service';
+
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly auditLogsService: AuditLogsService,
+    private readonly mailService: MailService,
   ) {}
 
   async create(createUserDto: CreateUserDto, performedBy?: string): Promise<UserDocument> {
     const existing = await this.userModel.findOne({ email: createUserDto.email });
     if (existing) throw new ConflictException('Email already registered');
 
+    // Generate IDs
+    const year = new Date().getFullYear();
+    const count = await this.userModel.countDocuments({ role: createUserDto.role });
+    const sequence = (count + 1).toString().padStart(3, '0');
+    
+    const finalData = { ...createUserDto };
+    if (createUserDto.role === Role.TEACHER) {
+      finalData.employeeId = `TCH${year}${sequence}`;
+    } else if (createUserDto.role === Role.STUDENT) {
+      finalData.enrollmentNumber = `STU${year}${sequence}`;
+    }
+
     const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
-    const user = new this.userModel({ ...createUserDto, password: hashedPassword });
+    const user = new this.userModel({ ...finalData, password: hashedPassword });
     const saved = await user.save();
+
+    // Send welcome email
+    await this.mailService.sendWelcomeEmail(saved);
+    // Notify admin
+    await this.mailService.sendAdminNotification(saved);
 
     if (performedBy) {
       await this.auditLogsService.log({
@@ -123,5 +143,28 @@ export class UsersService {
       }
     }
     return results;
+  }
+
+  async updateResetToken(id: string, token: string, expires: Date) {
+    return this.userModel.findByIdAndUpdate(id, {
+      $set: {
+        resetPasswordToken: token,
+        resetPasswordExpires: expires,
+      },
+    });
+  }
+
+  async findByResetToken(token: string): Promise<UserDocument> {
+    return this.userModel.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() },
+    }).select('+resetPasswordToken +resetPasswordExpires');
+  }
+
+  async updatePassword(id: string, hashedPassword: string) {
+    return this.userModel.findByIdAndUpdate(id, {
+      $set: { password: hashedPassword },
+      $unset: { resetPasswordToken: 1, resetPasswordExpires: 1 },
+    });
   }
 }
