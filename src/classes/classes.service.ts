@@ -62,9 +62,12 @@ export class ClassesService {
   async assignTeacher(classId: string, teacherId: string): Promise<ClassDocument> {
     const cls = await this.classModel.findByIdAndUpdate(
       classId,
-      { $addToSet: { teachers: new Types.ObjectId(teacherId) } },
+      { 
+        $set: { classTeacher: new Types.ObjectId(teacherId) },
+        $addToSet: { teachers: new Types.ObjectId(teacherId) } 
+      },
       { new: true },
-    ).populate('teachers', 'firstName lastName email');
+    ).populate('classTeacher', 'firstName lastName email').populate('teachers', 'firstName lastName email');
     if (!cls) throw new NotFoundException('Class not found');
     return cls;
   }
