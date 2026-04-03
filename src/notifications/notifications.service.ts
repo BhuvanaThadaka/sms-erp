@@ -21,7 +21,13 @@ export class NotificationsService {
   }
 
   async createMany(data: any[]): Promise<any> {
-    return this.notificationModel.insertMany(data);
+    console.log(`NotificationsService.createMany called with ${data.length} items`);
+    if (data.length > 0) {
+      console.log(`First notification: ${JSON.stringify(data[0])}`);
+    }
+    const result = await this.notificationModel.insertMany(data);
+    console.log(`NotificationsService.createMany saved ${result.length} items`);
+    return result;
   }
 
   async findAllForUser(userId: string): Promise<NotificationDocument[]> {

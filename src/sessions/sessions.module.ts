@@ -5,12 +5,16 @@ import { SessionsController } from './sessions.controller';
 import { Session, SessionSchema } from './schemas/session.schema';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { WebsocketsModule } from '../websockets/websockets.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Session.name, schema: SessionSchema }]),
     AuditLogsModule,
     WebsocketsModule,
+    NotificationsModule,
+    UsersModule,
   ],
   controllers: [SessionsController],
   providers: [SessionsService],
