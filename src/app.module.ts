@@ -15,6 +15,7 @@ import { WebsocketsModule } from './websockets/websockets.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { MarksModule } from './marks/marks.module';
 import { AcademicReportsModule } from './academic-reports/academic-reports.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { AcademicReportsModule } from './academic-reports/academic-reports.modul
     SubjectsModule,
     MarksModule,
     AcademicReportsModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

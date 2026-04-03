@@ -4,16 +4,25 @@ import { Model, Types } from 'mongoose';
 import { Event, EventDocument } from './schemas/event.schema';
 import { CreateEventDto } from './dto/event.dto';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
-import { AuditAction } from '../common/enums';
+import { AuditAction, EventType, Role } from '../common/enums';
+import { AppGateway } from '../websockets/app.gateway';
+import { User, UserDocument } from '../users/schemas/user.schema';
+import { Class, ClassDocument } from '../classes/schemas/class.schema';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class EventsService {
   constructor(
     @InjectModel(Event.name) private eventModel: Model<EventDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Class.name) private classModel: Model<ClassDocument>,
     private readonly auditLogsService: AuditLogsService,
+    private readonly appGateway: AppGateway,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(dto: CreateEventDto, createdBy: string): Promise<EventDocument> {
+    console.log('EventsService.create called by:', createdBy);
     const event = new this.eventModel({
       ...dto,
       createdBy: new Types.ObjectId(createdBy),
@@ -22,6 +31,11 @@ export class EventsService {
       applicableClasses: dto.applicableClasses?.map((id) => new Types.ObjectId(id)) || [],
     });
     const saved = await event.save();
+    
+    // Trigger real-time notifications
+    this.sendEventNotifications(saved).catch(err => {
+      console.error('Failed to send event notifications:', err);
+    });
 
     await this.auditLogsService.log({
       action: AuditAction.EVENT_CREATED,
@@ -74,5 +88,75 @@ export class EventsService {
   async delete(id: string): Promise<{ message: string }> {
     await this.eventModel.findByIdAndUpdate(id, { isActive: false });
     return { message: 'Event removed' };
+  }
+
+  private async sendEventNotifications(event: EventDocument) {
+    const notificationData = {
+      message: `New ${event.type.toLowerCase()} event: ${event.title}`,
+      type: 'EVENT_CREATED',
+      data: {
+        eventId: event._id,
+        title: event.title,
+        type: event.type,
+        startDate: event.startDate,
+        venue: event.venue,
+      },
+    };
+
+    let targetUserIds: string[] = [];
+
+    if (event.isAllClasses || event.type !== EventType.EXAM) {
+      // Notify all teachers and students
+      console.log(`Sending Broad notifications for event: ${event.title}`);
+      const users = await this.userModel.find({
+        role: { $in: [Role.TEACHER, Role.STUDENT] },
+        isActive: true,
+      }).select('_id');
+      targetUserIds = users.map((u) => u._id.toString());
+    } else {
+      // Specific EXAM event for specific classes
+      console.log(`Sending Specific EXAM notifications for event: ${event.title}`);
+      const classes = await this.classModel.find({
+        _id: { $in: event.applicableClasses },
+      });
+
+      const teacherIds = new Set<string>();
+      classes.forEach((c) => {
+        if (c.classTeacher) teacherIds.add(c.classTeacher.toString());
+        c.teachers?.forEach((t) => teacherIds.add(t.toString()));
+      });
+
+      const students = await this.userModel.find({
+        role: Role.STUDENT,
+        classId: { $in: event.applicableClasses },
+      }).select('_id');
+
+      const studentIds = students.map((s) => s._id.toString());
+      targetUserIds = Array.from(new Set([...teacherIds, ...studentIds]));
+    }
+
+    console.log(`Recipients found: ${targetUserIds.length}`);
+
+    if (targetUserIds.length > 0) {
+      // Persist notifications in DB
+      const notifications = targetUserIds.map(userId => ({
+        userId,
+        title: event.title,
+        message: notificationData.message,
+        type: 'EVENT_CREATED',
+        data: notificationData.data,
+        isRead: false
+      }));
+
+      try {
+        await this.notificationsService.createMany(notifications);
+        console.log(`Persisted ${notifications.length} notifications in DB`);
+      } catch (err) {
+        console.error('Failed to persist notifications:', err);
+      }
+
+      // Emit real-time WS notifications
+      this.appGateway.emitEventNotification(targetUserIds, notificationData);
+    }
   }
 }

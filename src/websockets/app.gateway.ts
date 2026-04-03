@@ -99,6 +99,14 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     this.server.to(`user:${studentId}`).emit('reportGenerated', data);
   }
 
+  // Emit event notification to specific users
+  emitEventNotification(userIds: string[], data: any) {
+    userIds.forEach((userId) => {
+      this.server.to(`user:${userId}`).emit('systemNotification', data);
+    });
+    this.logger.log(`Event notification emitted to ${userIds.length} users`);
+  }
+
   // Broadcast system-wide notification
   broadcastNotification(data: any) {
     this.server.emit('systemNotification', data);

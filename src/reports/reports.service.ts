@@ -2,8 +2,6 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
-import * as path from 'path';
-import * as fs from 'fs';
 import { Report, ReportDocument } from './schemas/report.schema';
 import { GenerateReportDto, BulkGenerateReportDto } from './dto/report.dto';
 import { AttendanceService } from '../attendance/attendance.service';
@@ -33,11 +31,7 @@ export class ReportsService {
     if (existingReport) throw new ConflictException('Report already exists for this student/quarter/year');
 
     const summary = await this.attendanceService.getStudentAttendanceSummary(dto.studentId, dto.academicYear);
-
     const performance = this.calculatePerformance(summary.percentage);
-    const pdfPath = await this.generatePDF(dto, summary, generatedBy);
-    const baseUrl = this.configService.get('PDF_BASE_URL', 'http://localhost:3000/reports');
-    const pdfUrl = `${baseUrl}/${path.basename(pdfPath)}`;
 
     const report = new this.reportModel({
       studentId: new Types.ObjectId(dto.studentId),
@@ -53,10 +47,11 @@ export class ReportsService {
       teacherRemarks: dto.teacherRemarks || 'No remarks provided.',
       participationSummary: dto.participationSummary || 'Satisfactory participation.',
       overallPerformance: dto.overallPerformance || performance,
-      pdfUrl,
     });
 
     const saved = await report.save();
+    saved.pdfUrl = `/api/v1/reports/${saved._id}/pdf`;
+    await saved.save();
 
     await this.auditLogsService.log({
       action: AuditAction.REPORT_GENERATED,
@@ -70,7 +65,7 @@ export class ReportsService {
       reportId: saved._id,
       quarter: dto.quarter,
       academicYear: dto.academicYear,
-      pdfUrl,
+      pdfUrl: saved.pdfUrl,
     });
 
     return saved.populate(['studentId', 'classId', 'generatedBy']);
@@ -124,62 +119,74 @@ export class ReportsService {
     return 'BELOW_AVERAGE';
   }
 
-  private async generatePDF(dto: GenerateReportDto, summary: any, generatedBy: string): Promise<string> {
-    const storagePath = this.configService.get('PDF_STORAGE_PATH', './uploads/reports');
-    if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
-
-    const fileName = `report_${dto.studentId}_${dto.quarter}_${dto.academicYear}_${Date.now()}.pdf`;
-    const filePath = path.join(storagePath, fileName);
+  async generatePdf(id: string): Promise<Buffer> {
+    const report = await this.findById(id);
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 50 });
+    const chunks: Buffer[] = [];
 
     return new Promise((resolve, reject) => {
-      try {
-        const PDFDocument = require('pdfkit');
-        const doc = new PDFDocument({ margin: 50 });
-        const stream = fs.createWriteStream(filePath);
-        doc.pipe(stream);
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', (err) => reject(err));
 
-        // Header
-        doc.fontSize(20).font('Helvetica-Bold').text('School ERP - Student Report', { align: 'center' });
-        doc.moveDown(0.5);
-        doc.fontSize(14).font('Helvetica').text(`Quarter: ${dto.quarter} | Academic Year: ${dto.academicYear}`, { align: 'center' });
-        doc.moveDown(1);
+      // Header
+      doc.fontSize(20).font('Helvetica-Bold').text('School ERP - General Progress Report', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.fontSize(14).font('Helvetica').text(`Quarter: ${report.quarter} | Academic Year: ${report.academicYear}`, { align: 'center' });
+      doc.moveDown(1);
 
-        // Divider
-        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-        doc.moveDown(1);
+      // Divider
+      doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+      doc.moveDown(1);
 
-        // Attendance Summary
-        doc.fontSize(12).font('Helvetica-Bold').text('Attendance Summary');
-        doc.moveDown(0.5);
-        doc.font('Helvetica').fontSize(11);
-        doc.text(`Total Days: ${summary.total}`);
-        doc.text(`Present: ${summary.present}`);
-        doc.text(`Absent: ${summary.absent}`);
-        doc.text(`Late: ${summary.late}`);
-        doc.text(`Attendance Percentage: ${summary.percentage}%`);
-        doc.moveDown(1);
+      // Student Info
+      doc.fontSize(12).font('Helvetica-Bold').text('Student Info');
+      doc.font('Helvetica').fontSize(11);
+      doc.text(`Name: ${report.studentId?.['firstName']} ${report.studentId?.['lastName']}`);
+      doc.text(`Enrollment No: ${report.studentId?.['enrollmentNumber']}`);
+      doc.text(`Class: ${report.classId?.['name']}`);
+      doc.moveDown(1);
 
-        // Remarks
-        doc.font('Helvetica-Bold').fontSize(12).text('Teacher Remarks:');
-        doc.font('Helvetica').fontSize(11).text(dto.teacherRemarks || 'No remarks.');
-        doc.moveDown(0.5);
+      // Attendance Summary
+      doc.fontSize(12).font('Helvetica-Bold').text('Attendance Summary');
+      doc.moveDown(0.5);
+      doc.font('Helvetica').fontSize(11);
+      doc.text(`Total Days: ${report.totalDays}`);
+      doc.text(`Present: ${report.presentDays}`);
+      doc.text(`Absent: ${report.absentDays}`);
+      doc.text(`Late: ${report.lateDays}`);
+      doc.text(`Attendance Percentage: ${report.attendancePercentage}%`);
+      doc.moveDown(1);
 
-        doc.font('Helvetica-Bold').fontSize(12).text('Participation:');
-        doc.font('Helvetica').fontSize(11).text(dto.participationSummary || 'Satisfactory.');
-        doc.moveDown(0.5);
+      // Remarks
+      doc.font('Helvetica-Bold').fontSize(12).text('Teacher Remarks:');
+      doc.font('Helvetica').fontSize(11).text(report.teacherRemarks || 'No remarks.');
+      doc.moveDown(0.5);
 
-        doc.font('Helvetica-Bold').fontSize(12).text(`Overall Performance: ${dto.overallPerformance || this.calculatePerformance(summary.percentage)}`);
-        doc.moveDown(1);
+      doc.font('Helvetica-Bold').fontSize(12).text('Participation:');
+      doc.font('Helvetica').fontSize(11).text(report.participationSummary || 'Satisfactory.');
+      doc.moveDown(0.5);
 
-        // Footer
-        doc.fontSize(9).fillColor('gray').text(`Generated on: ${new Date().toLocaleDateString()}`, { align: 'right' });
+      doc.font('Helvetica-Bold').fontSize(12).text(`Overall Performance: ${report.overallPerformance}`);
+      doc.moveDown(2);
 
-        doc.end();
-        stream.on('finish', () => resolve(filePath));
-        stream.on('error', reject);
-      } catch (err) {
-        reject(err);
-      }
+      // Footer
+      doc.fontSize(9).fillColor('gray').text(`Generated on: ${new Date().toLocaleDateString()}`, { align: 'right' });
+
+      doc.end();
     });
+  }
+
+  async findByComposite(studentId: string, quarter: string, academicYear: string): Promise<ReportDocument> {
+    const report = await this.reportModel.findOne({
+      studentId: new Types.ObjectId(studentId),
+      quarter: quarter as any,
+      academicYear,
+    })
+      .populate('studentId', 'firstName lastName enrollmentNumber')
+      .populate('classId', 'name grade section');
+    if (!report) throw new NotFoundException('Report not found');
+    return report;
   }
 }
