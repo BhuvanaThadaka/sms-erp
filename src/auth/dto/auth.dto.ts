@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsEnum, IsOptional, MaxLength, Matches } from 'class-validator';
+import { Role } from '../../common/enums';
 
 export class LoginDto {
   @IsEmail()
@@ -30,6 +31,39 @@ export class RegisterDto {
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
     message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
   })
+  password: string;
+
+  @IsEnum(Role)
+  @IsOptional()
+  role?: Role;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  enrollmentNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  employeeId?: string;
+}
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
   password: string;
 
   @IsNotEmpty({ message: 'Phone number is required' })
