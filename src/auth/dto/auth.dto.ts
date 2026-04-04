@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, Matches } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -10,18 +10,30 @@ export class LoginDto {
 }
 
 export class RegisterDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'First name is required' })
   @IsString()
+  @MaxLength(50, { message: 'First name cannot exceed 50 characters' })
+  @Matches(/^[^0-9]+$/, { message: 'First name should not contain numbers' })
   firstName: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Last name is required' })
   @IsString()
+  @MaxLength(50, { message: 'Last name cannot exceed 50 characters' })
+  @Matches(/^[^0-9]+$/, { message: 'Last name should not contain numbers' })
   lastName: string;
 
-  @IsEmail()
+  @IsEmail({}, { message: 'Email must be in a valid format' })
   email: string;
 
-  @IsNotEmpty()
-  @MinLength(8)
+  @IsNotEmpty({ message: 'Password is required' })
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
+    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+  })
   password: string;
+
+  @IsNotEmpty({ message: 'Phone number is required' })
+  @IsString()
+  @Matches(/^\d{10}$/, { message: 'Phone number must be exactly 10 digits and contain no alphabets' })
+  phone: string;
 }

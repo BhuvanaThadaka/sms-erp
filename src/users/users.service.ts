@@ -21,8 +21,25 @@ export class UsersService {
     const existing = await this.userModel.findOne({ email: createUserDto.email });
     if (existing) throw new ConflictException('Email already registered');
 
+    // Auto-generate ID based on role
+    const count = await this.userModel.countDocuments({ role: createUserDto.role });
+    const prefixMap = {
+      [Role.ADMIN]: 'ADN',
+      [Role.TEACHER]: 'EMP',
+      [Role.STUDENT]: 'STU',
+    };
+    const prefix = prefixMap[createUserDto.role] || 'USR';
+    const generatedId = `${prefix}${String(count + 1).padStart(3, '0')}`;
+
+    const payload: any = { ...createUserDto };
+    if (createUserDto.role === Role.STUDENT) {
+      payload.enrollmentNumber = generatedId;
+    } else {
+      payload.employeeId = generatedId;
+    }
+
     const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
-    const user = new this.userModel({ ...createUserDto, password: hashedPassword });
+    const user = new this.userModel({ ...payload, password: hashedPassword });
     const saved = await user.save();
 
     if (performedBy) {
