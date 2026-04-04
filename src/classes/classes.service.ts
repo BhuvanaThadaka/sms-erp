@@ -33,13 +33,29 @@ export class ClassesService {
     return saved.populate(['classTeacher', 'teachers']);
   }
 
-  async findAll(academicYear?: string): Promise<ClassDocument[]> {
+  async findAll(academicYear?: string, page: number = 1, limit: number = 100): Promise<{ classes: ClassDocument[], total: number, totalPages: number, page: number, limit: number }> {
     const filter: any = { isActive: true };
     if (academicYear) filter.academicYear = academicYear;
-    return this.classModel.find(filter)
-      .populate('classTeacher', 'firstName lastName email')
-      .populate('teachers', 'firstName lastName email')
-      .exec();
+    
+    const skip = (page - 1) * limit;
+    const [classes, total] = await Promise.all([
+      this.classModel.find(filter)
+        .populate('classTeacher', 'firstName lastName email')
+        .populate('teachers', 'firstName lastName email')
+        .sort({ grade: 1, section: 1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.classModel.countDocuments(filter)
+    ]);
+
+    return {
+      classes,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async findById(id: string): Promise<ClassDocument> {
