@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { AuditAction } from '../../common/enums';
 
 export type AuditLogDocument = AuditLog & Document;
@@ -9,8 +9,8 @@ export class AuditLog {
   @Prop({ required: true, enum: AuditAction })
   action: AuditAction;
 
-  @Prop({ required: true })
-  performedBy: string;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  performedBy: Types.ObjectId | string;
 
   @Prop({ required: true })
   entityType: string;
