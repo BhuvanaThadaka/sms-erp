@@ -33,9 +33,15 @@ export class ClassesService {
     return saved.populate(['classTeacher', 'teachers']);
   }
 
-  async findAll(academicYear?: string, page: number = 1, limit: number = 100): Promise<{ classes: ClassDocument[], total: number, totalPages: number, page: number, limit: number }> {
+  async findAll(
+    academicYear?: string, 
+    page: number = 1, 
+    limit: number = 100,
+    classTeacher?: string
+  ): Promise<{ classes: ClassDocument[], total: number, totalPages: number, page: number, limit: number }> {
     const filter: any = { isActive: true };
     if (academicYear) filter.academicYear = academicYear;
+    if (classTeacher) filter.classTeacher = new Types.ObjectId(classTeacher);
     
     const skip = (page - 1) * limit;
     const [classes, total] = await Promise.all([
@@ -88,13 +94,18 @@ export class ClassesService {
     return cls;
   }
 
-  async getTeacherClasses(teacherId: string): Promise<ClassDocument[]> {
-    return this.classModel.find({
-      $or: [
+  async getTeacherClasses(teacherId: string, isClassTeacher?: boolean): Promise<ClassDocument[]> {
+    const query: any = { isActive: true };
+    
+    if (isClassTeacher) {
+      query.classTeacher = new Types.ObjectId(teacherId);
+    } else {
+      query.$or = [
         { classTeacher: new Types.ObjectId(teacherId) },
         { teachers: new Types.ObjectId(teacherId) },
-      ],
-      isActive: true,
-    }).populate('classTeacher', 'firstName lastName email');
+      ];
+    }
+
+    return this.classModel.find(query).populate('classTeacher', 'firstName lastName email');
   }
 }

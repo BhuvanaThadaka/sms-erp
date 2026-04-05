@@ -21,14 +21,16 @@ export class ClassesController {
   @Get()
   findAll(
     @Query('academicYear') academicYear?: string,
+    @Query('classTeacher') classTeacher?: string,
+    @Query('isClassTeacher') isClassTeacher?: string,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '100',
     @CurrentUser() user?: any
   ) {
     if (user.role === Role.TEACHER) {
-      return this.classesService.getTeacherClasses(user.userId);
+      return this.classesService.getTeacherClasses(user.userId, isClassTeacher === 'true');
     }
-    return this.classesService.findAll(academicYear, +page, +limit);
+    return this.classesService.findAll(academicYear, +page, +limit, classTeacher);
   }
 
   @Get(':id')
