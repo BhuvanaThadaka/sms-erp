@@ -94,15 +94,18 @@ export class ClassesService {
     return cls;
   }
 
-  async getTeacherClasses(teacherId: string): Promise<{ classes: ClassDocument[] }> {
-    const classes = await this.classModel.find({
-      $or: [
+  async getTeacherClasses(teacherId: string, isClassTeacher?: boolean): Promise<ClassDocument[]> {
+    const query: any = { isActive: true };
+    
+    if (isClassTeacher) {
+      query.classTeacher = new Types.ObjectId(teacherId);
+    } else {
+      query.$or = [
         { classTeacher: new Types.ObjectId(teacherId) },
         { teachers: new Types.ObjectId(teacherId) },
-      ],
-      isActive: true,
-    }).populate('classTeacher', 'firstName lastName email').exec();
+      ];
+    }
 
-    return { classes };
+    return this.classModel.find(query).populate('classTeacher', 'firstName lastName email');
   }
 }
