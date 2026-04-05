@@ -6,6 +6,7 @@ import { MarkAttendanceDto, BulkMarkAttendanceDto, AttendanceFilterDto } from '.
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { AuditAction } from '../common/enums';
 import { AppGateway } from '../websockets/app.gateway';
+import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
 
 @Injectable()
 export class AttendanceService {
@@ -135,6 +136,93 @@ export class AttendanceService {
       present: records.filter((r) => r.status === 'PRESENT').length,
       absent: records.filter((r) => r.status === 'ABSENT').length,
       late: records.filter((r) => r.status === 'LATE').length,
+    };
+  }
+
+  async getClassAttendanceSummary(classId: string, dateStr: string, academicYear: string) {
+    const date = new Date(dateStr);
+    const startMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+    const endMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
+
+    const [dailyRecords, monthlyRecords, yearlyRecords] = await Promise.all([
+      this.attendanceModel.find({ classId: new Types.ObjectId(classId), date }),
+      this.attendanceModel.find({ classId: new Types.ObjectId(classId), date: { $gte: startMonth, $lte: endMonth } }),
+      this.attendanceModel.find({ classId: new Types.ObjectId(classId), academicYear }),
+    ]);
+
+    const calculateStats = (records: any[]) => {
+      const workingDays = records.filter(r => new Date(r.date).getUTCDay() !== 0);
+      const total = workingDays.length;
+      const present = workingDays.filter(r => r.status === 'PRESENT').length;
+      const absent = workingDays.filter(r => r.status === 'ABSENT').length;
+      const late = workingDays.filter(r => r.status === 'LATE').length;
+      const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+      return { total, present, absent, late, percentage };
+    };
+
+    const calculateStudentStats = (records: any[]) => {
+      const stats: Record<string, any> = {};
+      const workingDays = records.filter(r => new Date(r.date).getUTCDay() !== 0);
+      workingDays.forEach(r => {
+        const sid = r.studentId.toString();
+        if (!stats[sid]) stats[sid] = { total: 0, present: 0 };
+        stats[sid].total++;
+        if (r.status === 'PRESENT') stats[sid].present++;
+      });
+      
+      Object.keys(stats).forEach(sid => {
+        stats[sid].percentage = stats[sid].total > 0 
+          ? Math.round((stats[sid].present / stats[sid].total) * 100) 
+          : 0;
+      });
+      return stats;
+    };
+
+    const dailyStd = calculateStudentStats(dailyRecords);
+    const monthlyStd = calculateStudentStats(monthlyRecords);
+    const yearlyStd = calculateStudentStats(yearlyRecords);
+
+    // Weekly stats
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
+    const weekRecords = await this.attendanceModel.find({
+      classId: new Types.ObjectId(classId),
+      date: { $gte: weekStart, $lte: weekEnd }
+    });
+
+    const weeklyStudentData: Record<string, any> = {};
+    weekRecords.forEach(r => {
+      const sid = r.studentId.toString();
+      const dStr = format(r.date, 'yyyy-MM-dd');
+      if (!weeklyStudentData[sid]) weeklyStudentData[sid] = {};
+      weeklyStudentData[sid][dStr] = r.status;
+    });
+
+    const weekDays = [1, 2, 3, 4, 5, 6, 0].map(d => {
+        const day = new Date(weekStart);
+        day.setDate(weekStart.getDate() + (d === 0 ? 6 : d - 1));
+        return format(day, 'yyyy-MM-dd');
+    });
+
+    // Merge student stats
+    const studentStats: Record<string, any> = {};
+    const allStudentIds = new Set([...Object.keys(dailyStd), ...Object.keys(monthlyStd), ...Object.keys(yearlyStd), ...Object.keys(weeklyStudentData)]);
+    
+    allStudentIds.forEach(sid => {
+      studentStats[sid] = {
+        daily: dailyStd[sid]?.percentage || 0,
+        monthly: monthlyStd[sid]?.percentage || 0,
+        yearly: yearlyStd[sid]?.percentage || 0,
+        weekly: weeklyStudentData[sid] || {},
+      };
+    });
+
+    return {
+      daily: calculateStats(dailyRecords),
+      monthly: calculateStats(monthlyRecords),
+      yearly: calculateStats(yearlyRecords),
+      weekDays,
+      studentStats,
     };
   }
 }

@@ -33,9 +33,15 @@ export class ClassesService {
     return saved.populate(['classTeacher', 'teachers']);
   }
 
-  async findAll(academicYear?: string, page: number = 1, limit: number = 100): Promise<{ classes: ClassDocument[], total: number, totalPages: number, page: number, limit: number }> {
+  async findAll(
+    academicYear?: string, 
+    page: number = 1, 
+    limit: number = 100,
+    classTeacher?: string
+  ): Promise<{ classes: ClassDocument[], total: number, totalPages: number, page: number, limit: number }> {
     const filter: any = { isActive: true };
     if (academicYear) filter.academicYear = academicYear;
+    if (classTeacher) filter.classTeacher = new Types.ObjectId(classTeacher);
     
     const skip = (page - 1) * limit;
     const [classes, total] = await Promise.all([
