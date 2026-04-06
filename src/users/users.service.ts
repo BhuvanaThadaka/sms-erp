@@ -69,7 +69,7 @@ export class UsersService {
     if (role) filter.role = role;
     if (classId) filter.classId = new Types.ObjectId(classId);
 
-    return this.userModel.find(filter).select('-password').populate('classId', 'name grade section').exec();
+    return this.userModel.find(filter).select('-password').populate('classId', 'name grade section').sort({ createdAt: -1 }).exec();
   }
 
   async findById(id: string): Promise<UserDocument> {

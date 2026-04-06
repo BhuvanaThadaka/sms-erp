@@ -48,7 +48,7 @@ export class ClassesService {
       this.classModel.find(filter)
         .populate('classTeacher', 'firstName lastName email')
         .populate('teachers', 'firstName lastName email')
-        .sort({ grade: 1, section: 1 })
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .exec(),
@@ -107,5 +107,12 @@ export class ClassesService {
     }
 
     return this.classModel.find(query).populate('classTeacher', 'firstName lastName email');
+  }
+
+  async remove(id: string): Promise<{ success: boolean; message: string }> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Class not found');
+    const result = await this.classModel.findByIdAndDelete(id);
+    if (!result) throw new NotFoundException('Class not found');
+    return { success: true, message: 'Class deleted successfully' };
   }
 }
