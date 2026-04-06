@@ -40,6 +40,10 @@ export class AuditLogsService {
       if (filters.to) query.timestamp.$lte = new Date(filters.to);
     }
 
-    return this.auditLogModel.find(query).sort({ timestamp: -1 }).limit(500).exec();
+    return this.auditLogModel.find(query)
+      .populate('performedBy', 'firstName lastName role')
+      .sort({ timestamp: -1 })
+      .limit(500)
+      .exec();
   }
 }

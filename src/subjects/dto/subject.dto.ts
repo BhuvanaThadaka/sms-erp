@@ -39,17 +39,17 @@ export class CreateSubjectDto {
 }
 
 export class UpdateSubjectDto {
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  name?: string;
+  name: string;
 
   @IsOptional()
   @IsString()
   description?: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsMongoId()
-  subjectTeacher?: string;
+  subjectTeacher: string;
 
   @IsOptional()
   @IsNumber()

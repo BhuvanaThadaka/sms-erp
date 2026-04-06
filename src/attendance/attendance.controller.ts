@@ -49,4 +49,14 @@ export class AttendanceController {
   async getClassStats(@Param('classId') classId: string, @Query('date') date: string) {
     return this.attendanceService.getClassAttendanceStats(classId, date);
   }
+
+  @Get('class/:classId/summary')
+  @Roles(Role.ADMIN, Role.TEACHER)
+  async getClassSummary(
+    @Param('classId') classId: string, 
+    @Query('date') date: string,
+    @Query('academicYear') academicYear: string
+  ) {
+    return this.attendanceService.getClassAttendanceSummary(classId, date, academicYear);
+  }
 }
