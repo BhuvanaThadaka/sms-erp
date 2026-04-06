@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Delete } from '@nestjs/common';
 import { ClassesService } from './classes.service';
 import { CreateClassDto, UpdateClassDto, AssignTeacherDto } from './dto/class.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -48,5 +48,11 @@ export class ClassesController {
   @Roles(Role.ADMIN)
   assignTeacher(@Param('id') id: string, @Body() dto: AssignTeacherDto) {
     return this.classesService.assignTeacher(id, dto.teacherId);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  remove(@Param('id') id: string) {
+    return this.classesService.remove(id);
   }
 }
