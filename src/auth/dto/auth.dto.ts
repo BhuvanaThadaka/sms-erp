@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsEnum, IsOptional, MaxLength, Matches } from 'class-validator';
+import { Role } from '../../common/enums';
 
 export class LoginDto {
   @IsEmail()

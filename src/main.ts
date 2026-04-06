@@ -5,6 +5,8 @@ import { AppModule } from './app.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
+import { json, urlencoded } from 'express';
+
 import * as express from 'express';
 
 async function bootstrap() {
@@ -19,6 +21,10 @@ async function bootstrap() {
 
   // Global prefix
   app.setGlobalPrefix('api/v1');
+
+  // Increase payload size limit for Base64 image uploads
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
 
   // CORS
   app.enableCors({
