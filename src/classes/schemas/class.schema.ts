@@ -31,6 +31,9 @@ export class Class {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'AcademicStructure' })
+  academicStructure: Types.ObjectId;
 }
 
 export const ClassSchema = SchemaFactory.createForClass(Class);

@@ -28,6 +28,10 @@ export class CreateClassDto {
   @IsOptional()
   @IsNumber()
   maxStudents?: number;
+
+  @IsOptional()
+  @IsMongoId()
+  academicStructure?: string;
 }
 
 export class UpdateClassDto {
@@ -46,6 +50,10 @@ export class UpdateClassDto {
   @IsOptional()
   @IsNumber()
   maxStudents?: number;
+
+  @IsOptional()
+  @IsMongoId()
+  academicStructure?: string;
 }
 
 export class AssignTeacherDto {
