@@ -54,3 +54,15 @@ export enum AuditAction {
   ACADEMIC_STRUCTURE_CREATED = 'ACADEMIC_STRUCTURE_CREATED',
   ACADEMIC_STRUCTURE_UPDATED = 'ACADEMIC_STRUCTURE_UPDATED',
 }
+
+export enum AssignmentStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  CLOSED = 'CLOSED',
+}
+
+export enum SubmissionStatus {
+  SUBMITTED = 'SUBMITTED',
+  COMPLETED = 'COMPLETED',
+  NEEDS_WORK = 'NEEDS_WORK',
+}
