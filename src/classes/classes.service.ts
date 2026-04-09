@@ -48,6 +48,7 @@ export class ClassesService {
       this.classModel.find(filter)
         .populate('classTeacher', 'firstName lastName email')
         .populate('teachers', 'firstName lastName email')
+        .populate('academicStructure', 'name terms')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -68,7 +69,8 @@ export class ClassesService {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Class not found');
     const cls = await this.classModel.findById(id)
       .populate('classTeacher', 'firstName lastName email')
-      .populate('teachers', 'firstName lastName email');
+      .populate('teachers', 'firstName lastName email')
+      .populate('academicStructure');
     if (!cls) throw new NotFoundException('Class not found');
     return cls;
   }

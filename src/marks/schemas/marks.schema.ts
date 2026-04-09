@@ -18,8 +18,14 @@ export class Marks {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   enteredBy: Types.ObjectId; // subject teacher
 
-  @Prop({ required: true, enum: Quarter })
+  @Prop({ enum: Quarter })
   quarter: Quarter;
+
+  @Prop({ required: true })
+  termName: string;
+
+  @Prop({ required: true })
+  examCode: string;
 
   @Prop({ required: true, min: 0 })
   marksObtained: number;
@@ -48,11 +54,11 @@ export class Marks {
 
 export const MarksSchema = SchemaFactory.createForClass(Marks);
 
-// Unique: one mark entry per student per subject per quarter per year
+// Unique: one mark entry per student per subject per assessment per year
 MarksSchema.index(
-  { studentId: 1, subjectId: 1, quarter: 1, academicYear: 1 },
+  { studentId: 1, subjectId: 1, termName: 1, examCode: 1, quarter: 1, academicYear: 1 },
   { unique: true },
 );
-MarksSchema.index({ classId: 1, quarter: 1, academicYear: 1 });
-MarksSchema.index({ subjectId: 1, quarter: 1 });
+MarksSchema.index({ classId: 1, termName: 1, examCode: 1, academicYear: 1 });
+MarksSchema.index({ subjectId: 1, termName: 1, examCode: 1 });
 MarksSchema.index({ studentId: 1, academicYear: 1 });

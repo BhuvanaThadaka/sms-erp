@@ -18,9 +18,17 @@ export class EnterMarksDto {
   @IsMongoId()
   classId: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsEnum(Quarter)
-  quarter: Quarter;
+  quarter?: Quarter;
+
+  @IsOptional()
+  @IsString()
+  termName?: string;
+
+  @IsOptional()
+  @IsString()
+  examCode?: string;
 
   @IsNotEmpty()
   @IsNumber()
@@ -71,9 +79,17 @@ export class BulkEnterMarksDto {
   @IsMongoId()
   classId: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsEnum(Quarter)
-  quarter: Quarter;
+  quarter?: Quarter;
+
+  @IsOptional()
+  @IsString()
+  termName?: string;
+
+  @IsOptional()
+  @IsString()
+  examCode?: string;
 
   @IsNotEmpty()
   @IsNumber()
@@ -121,6 +137,14 @@ export class MarksFilterDto {
   @IsOptional()
   @IsEnum(Quarter)
   quarter?: Quarter;
+
+  @IsOptional()
+  @IsString()
+  termName?: string;
+
+  @IsOptional()
+  @IsString()
+  examCode?: string;
 
   @IsOptional()
   @IsString()

@@ -40,7 +40,9 @@ export class MarksService {
     const existing = await this.marksModel.findOne({
       studentId: new Types.ObjectId(dto.studentId),
       subjectId: new Types.ObjectId(dto.subjectId),
-      quarter: dto.quarter,
+      termName: dto.termName || null,
+      examCode: dto.examCode || null,
+      quarter: dto.quarter || null,
       academicYear: dto.academicYear,
     });
 
@@ -61,7 +63,7 @@ export class MarksService {
         performedBy: teacherId,
         entityType: 'Marks',
         entityId: record._id.toString(),
-        details: { studentId: dto.studentId, subjectId: dto.subjectId, quarter: dto.quarter },
+        details: { studentId: dto.studentId, subjectId: dto.subjectId, termName: dto.termName, examCode: dto.examCode },
       });
     } else {
       const newRecord = new this.marksModel({
@@ -79,7 +81,7 @@ export class MarksService {
         performedBy: teacherId,
         entityType: 'Marks',
         entityId: record._id.toString(),
-        details: { studentId: dto.studentId, subjectId: dto.subjectId, quarter: dto.quarter },
+        details: { studentId: dto.studentId, subjectId: dto.subjectId, termName: dto.termName, examCode: dto.examCode },
       });
     }
 
@@ -104,6 +106,8 @@ export class MarksService {
           subjectId: dto.subjectId,
           classId: dto.classId,
           quarter: dto.quarter,
+          termName: dto.termName,
+          examCode: dto.examCode,
           marksObtained: rec.isAbsent ? 0 : rec.marksObtained,
           maxMarks: dto.maxMarks,
           academicYear: dto.academicYear,
@@ -126,6 +130,8 @@ export class MarksService {
     if (filter.studentId) query.studentId = new Types.ObjectId(filter.studentId);
     if (filter.subjectId) query.subjectId = new Types.ObjectId(filter.subjectId);
     if (filter.quarter) query.quarter = filter.quarter;
+    if (filter.termName) query.termName = filter.termName;
+    if (filter.examCode) query.examCode = filter.examCode;
     if (filter.academicYear) query.academicYear = filter.academicYear;
 
     // Students can only see own marks
@@ -157,7 +163,11 @@ export class MarksService {
 
     const marks = await this.marksModel.find(query)
       .populate('subjectId', 'name code maxMarks passingMarks')
-      .populate('classId', 'name grade section')
+      .populate({
+        path: 'classId',
+        select: 'name grade section academicStructure',
+        populate: { path: 'academicStructure' },
+      })
       .sort({ quarter: 1 });
 
     // Group by subject
@@ -173,12 +183,15 @@ export class MarksService {
         });
       }
       const entry = subjectMap.get(subId);
-      entry.quarters[m.quarter] = {
+      const examKey = `${m.termName} - ${m.examCode}`;
+      entry.quarters[examKey] = {
         marksObtained: m.marksObtained,
         maxMarks: m.maxMarks,
         grade: m.grade,
         isAbsent: m.isAbsent,
         teacherRemarks: m.teacherRemarks,
+        termName: m.termName,
+        examCode: m.examCode,
       };
       entry.totalObtained += m.marksObtained;
       entry.totalMax += m.maxMarks;
@@ -214,6 +227,7 @@ export class MarksService {
       grandTotal,
       overallPercentage,
       overallGrade: this.calculateGrade(overallPercentage),
+      academicStructure: marks[0]?.classId?.['academicStructure'] || null,
     };
   }
 
@@ -245,9 +259,11 @@ export class MarksService {
       const entry = studentMap.get(stuId);
       const subId = m.subjectId['_id'].toString();
       if (!entry.subjects[subId]) {
-        entry.subjects[subId] = { subject: m.subjectId, quarters: {}, total: 0, max: 0 };
+        entry.subjects[subId] = { subject: m.subjectId, quarters: {}, exams: {}, total: 0, max: 0 };
       }
-      entry.subjects[subId].quarters[m.quarter] = m.marksObtained;
+      
+      const examKey = m.examCode || m.quarter; // Fallback to quarter for legacy data
+      entry.subjects[subId].exams[examKey] = m.marksObtained;
       entry.subjects[subId].total += m.marksObtained;
       entry.subjects[subId].max += m.maxMarks;
       entry.totalObtained += m.marksObtained;
