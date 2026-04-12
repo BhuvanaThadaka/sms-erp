@@ -125,10 +125,12 @@ export class ScheduleService {
       isRead: false
     }));
 
-    await this.notificationsService.createMany(notifications);
+    const savedNotifications = await this.notificationsService.createMany(notifications);
     
-    // Emit real-time WS notifications
-    this.appGateway.emitEventNotification(targetUserIds, notificationData);
+    // Emit real-time WS notifications with actual database _ids
+    savedNotifications.forEach(notif => {
+      this.appGateway.emitNotificationToUser(notif.userId.toString(), notif);
+    });
   }
 
   async delete(id: string): Promise<{ message: string }> {

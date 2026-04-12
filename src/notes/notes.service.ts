@@ -40,6 +40,12 @@ export class NotesService {
       .populate('uploadedBy', 'firstName lastName')
       .sort({ createdAt: -1 });
   }
+  
+  async findByTeacher(teacherId: string): Promise<NoteDocument[]> {
+    return this.noteModel.find({ uploadedBy: new Types.ObjectId(teacherId) })
+      .populate('classId', 'name grade section')
+      .sort({ createdAt: -1 });
+  }
 
   async delete(id: string): Promise<{ message: string }> {
     const note = await this.noteModel.findByIdAndDelete(id);
