@@ -15,8 +15,14 @@ export class AcademicReport {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   generatedBy: Types.ObjectId;
 
-  @Prop({ required: true, enum: Quarter })
-  quarter: Quarter;
+  @Prop({ enum: Quarter })
+  quarter?: Quarter;
+
+  @Prop()
+  termName?: string;
+
+  @Prop()
+  examCode?: string;
 
   @Prop({ required: true })
   academicYear: string;
@@ -47,5 +53,5 @@ export class AcademicReport {
 }
 
 export const AcademicReportSchema = SchemaFactory.createForClass(AcademicReport);
-AcademicReportSchema.index({ studentId: 1, quarter: 1, academicYear: 1 }, { unique: true });
-AcademicReportSchema.index({ classId: 1, quarter: 1, academicYear: 1 });
+AcademicReportSchema.index({ studentId: 1, academicYear: 1, termName: 1, examCode: 1, quarter: 1 }, { unique: true });
+AcademicReportSchema.index({ classId: 1, academicYear: 1, termName: 1, examCode: 1, quarter: 1 });

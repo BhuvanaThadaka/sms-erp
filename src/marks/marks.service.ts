@@ -154,12 +154,14 @@ export class MarksService {
   }
 
   // ─── Student Report Card Data ──────────────────────────
-  async getStudentReportCard(studentId: string, academicYear: string, classId?: string) {
+  async getStudentReportCard(studentId: string, academicYear: string, classId?: string, termName?: string, examCode?: string) {
     const query: any = {
       studentId: new Types.ObjectId(studentId),
       academicYear,
     };
     if (classId) query.classId = new Types.ObjectId(classId);
+    if (termName) query.termName = termName;
+    if (examCode) query.examCode = examCode;
 
     const marks = await this.marksModel.find(query)
       .populate('subjectId', 'name code maxMarks passingMarks')
@@ -173,10 +175,16 @@ export class MarksService {
     // Group by subject
     const subjectMap: Map<string, any> = new Map();
     for (const m of marks) {
-      const subId = m.subjectId['_id'].toString();
+      const subObj = m.subjectId as any;
+      const subId = subObj._id?.toString() || subObj.toString();
+      
       if (!subjectMap.has(subId)) {
         subjectMap.set(subId, {
-          subject: m.subjectId,
+          subject: {
+            _id: subId,
+            name: subObj.name || 'Unknown Subject',
+            code: subObj.code || 'N/A'
+          },
           quarters: {},
           totalObtained: 0,
           totalMax: 0,

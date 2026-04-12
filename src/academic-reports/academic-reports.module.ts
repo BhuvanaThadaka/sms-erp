@@ -7,6 +7,8 @@ import { MarksModule } from '../marks/marks.module';
 import { UsersModule } from '../users/users.module';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
+import { ClassesModule } from '../classes/classes.module';
+import { SubjectsModule } from '../subjects/subjects.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { AuditLogsModule } from '../audit-logs/audit-logs.module';
     UsersModule,
     AttendanceModule,
     AuditLogsModule,
+    ClassesModule,
+    SubjectsModule,
   ],
   controllers: [AcademicReportsController],
   providers: [AcademicReportsService],
