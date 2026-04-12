@@ -36,6 +36,7 @@ export class EventsService {
       applicableClasses: dto.applicableClasses?.map((id) => new Types.ObjectId(id)) || [],
     });
     const saved = await event.save();
+    await saved.populate('applicableClasses', 'name grade section');
     
     // Trigger real-time notifications
     this.sendEventNotifications(saved, creator.role).catch(err => {
@@ -71,15 +72,21 @@ export class EventsService {
       ];
     }
 
-    return this.eventModel.find(filter)
-      .populate('createdBy', 'firstName lastName')
-      .populate('applicableClasses', 'name grade section')
+    const results = await this.eventModel.find(filter)
+      .populate({ path: 'createdBy', select: 'firstName lastName' })
+      .populate({ path: 'applicableClasses', select: 'name grade section' })
       .sort({ startDate: 1 })
       .exec();
+    
+    console.log(`findAll returned ${results.length} events. First event classes:`, results[0]?.applicableClasses);
+    return results;
   }
 
   async findById(id: string): Promise<EventDocument> {
-    const event = await this.eventModel.findById(id).populate(['createdBy', 'applicableClasses']);
+    const event = await this.eventModel.findById(id).populate([
+      { path: 'createdBy', select: 'firstName lastName' },
+      { path: 'applicableClasses', select: 'name grade section' }
+    ]);
     if (!event) throw new NotFoundException('Event not found');
     return event;
   }
@@ -163,13 +170,14 @@ export class EventsService {
       let savedNotifications = [];
       try {
         savedNotifications = await this.notificationsService.createMany(notifications);
-        console.log(`Persisted ${notifications.length} notifications in DB`);
+        console.log(`Persisted ${notifications.length} notifications in DB. First ID: ${savedNotifications[0]?._id}`);
       } catch (err) {
         console.error('Failed to persist notifications:', err);
       }
 
       // Emit real-time WS notifications with actual database _ids
       savedNotifications.forEach(notif => {
+        console.log(`Emitting notification to ${notif.userId}: ${notif._id}`);
         this.appGateway.emitNotificationToUser(notif.userId.toString(), notif);
       });
     }
