@@ -10,9 +10,16 @@ export class GenerateAcademicReportDto {
   @IsMongoId()
   classId: string;
 
-  @IsNotEmpty()
-  @IsEnum(Quarter)
-  quarter: Quarter;
+  @IsOptional()
+  quarter?: Quarter;
+
+  @IsOptional()
+  @IsString()
+  termName?: string;
+
+  @IsOptional()
+  @IsString()
+  examCode?: string;
 
   @IsNotEmpty()
   @IsString()
@@ -28,9 +35,16 @@ export class BulkGenerateReportDto {
   @IsMongoId()
   classId: string;
 
-  @IsNotEmpty()
-  @IsEnum(Quarter)
-  quarter: Quarter;
+  @IsOptional()
+  quarter?: Quarter;
+
+  @IsOptional()
+  @IsString()
+  termName?: string;
+
+  @IsOptional()
+  @IsString()
+  examCode?: string;
 
   @IsNotEmpty()
   @IsString()

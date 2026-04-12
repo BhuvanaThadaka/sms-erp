@@ -108,7 +108,9 @@ export class ClassesService {
       ];
     }
 
-    return this.classModel.find(query).populate('classTeacher', 'firstName lastName email');
+    return this.classModel.find(query)
+      .populate('classTeacher', 'firstName lastName email')
+      .populate('academicStructure');
   }
 
   async remove(id: string): Promise<{ success: boolean; message: string }> {
