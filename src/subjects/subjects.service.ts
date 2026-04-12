@@ -80,9 +80,14 @@ export class SubjectsService {
   }
 
   async update(id: string, dto: UpdateSubjectDto): Promise<SubjectDocument> {
+    const updateData: any = { ...dto };
+    if (dto.classId) updateData.classId = new Types.ObjectId(dto.classId);
+    if (dto.subjectTeacher) updateData.subjectTeacher = new Types.ObjectId(dto.subjectTeacher);
+    if (dto.code) updateData.code = dto.code.toUpperCase();
+
     const subject = await this.subjectModel.findByIdAndUpdate(
       id,
-      { $set: { ...dto, ...(dto.subjectTeacher ? { subjectTeacher: new Types.ObjectId(dto.subjectTeacher) } : {}) } },
+      { $set: updateData },
       { new: true },
     ).populate([
       { path: 'classId', select: 'name grade section' },
