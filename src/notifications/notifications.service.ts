@@ -32,9 +32,17 @@ export class NotificationsService {
 
   async findAllForUser(userId: string): Promise<NotificationDocument[]> {
     return this.notificationModel
-      .find({ userId: new Types.ObjectId(userId) })
+      .find({ userId: new Types.ObjectId(userId), isRead: false })
       .sort({ createdAt: -1 })
       .limit(50)
+      .exec();
+  }
+
+  async findAllNotificationsForUser(userId: string): Promise<NotificationDocument[]> {
+    return this.notificationModel
+      .find({ userId: new Types.ObjectId(userId) })
+      .sort({ createdAt: -1 })
+      .limit(100)
       .exec();
   }
 

@@ -18,6 +18,14 @@ export class NotificationsController {
     return results;
   }
 
+  @Get('all')
+  async findAllNotifications(@CurrentUser('userId') userId: string) {
+    console.log(`Fetching all notifications for user: ${userId}`);
+    const results = await this.notificationsService.findAllNotificationsForUser(userId);
+    console.log(`Found ${results.length} notifications`);
+    return results;
+  }
+
   @Patch(':id/read')
   async markAsRead(@Param('id') id: string, @CurrentUser('userId') userId: string) {
     return this.notificationsService.markAsRead(id, userId);

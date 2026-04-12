@@ -4,16 +4,18 @@ import { Model, Types } from 'mongoose';
 import { Session, SessionDocument } from './schemas/session.schema';
 import { CreateSessionDto, UpdateSessionDto } from './dto/session.dto';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
-import { AuditAction } from '../common/enums';
+import { AuditAction, Role } from '../common/enums';
 import { AppGateway } from '../websockets/app.gateway';
 
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import { User, UserDocument } from '../users/schemas/user.schema';
 
 @Injectable()
 export class SessionsService {
   constructor(
     @InjectModel(Session.name) private sessionModel: Model<SessionDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly auditLogsService: AuditLogsService,
     private readonly appGateway: AppGateway,
     private readonly notificationsService: NotificationsService,
@@ -56,16 +58,30 @@ export class SessionsService {
   private async sendSessionNotifications(session: SessionDocument) {
     const classId = (session.classId as any)._id || session.classId;
     console.log(`Sending session notifications for class: ${classId}`);
+    
+    // Get students in the class
     const students = await this.usersService.getStudentsByClass(classId.toString());
     console.log(`Found ${students.length} students for class ${classId}`);
     
-    if (students.length === 0) {
-      console.log(`No students found for class: ${classId}`);
+    // Get all admins
+    const admins = await this.userModel.find({
+      role: Role.ADMIN,
+      isActive: true,
+    }).select('_id');
+    
+    const studentIds = students.map(s => s._id.toString());
+    const adminIds = admins.map(a => a._id.toString());
+    const targetUserIds = Array.from(new Set([...studentIds, ...adminIds]));
+    
+    console.log(`Total recipients: ${targetUserIds.length} (students: ${studentIds.length}, admins: ${adminIds.length})`);
+    
+    if (targetUserIds.length === 0) {
+      console.log(`No recipients found for class: ${classId}`);
       return;
     }
 
     const notificationData = {
-      title: 'New Session',
+      title: 'New Session Scheduled',
       message: `New session scheduled: ${session.topic}`,
       type: 'SESSION_CREATED',
       data: {
@@ -73,11 +89,10 @@ export class SessionsService {
         topic: session.topic,
         classId: session.classId,
         sessionDate: session.sessionDate,
+        teacher: session.teacher,
       },
     };
 
-    const targetUserIds = students.map(s => s._id.toString());
-    
     // Persist in DB
     const notifications = targetUserIds.map(userId => ({
       userId,

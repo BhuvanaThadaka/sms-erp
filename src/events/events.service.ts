@@ -23,6 +23,11 @@ export class EventsService {
 
   async create(dto: CreateEventDto, createdBy: string): Promise<EventDocument> {
     console.log('EventsService.create called by:', createdBy);
+    
+    // Get creator's role
+    const creator = await this.userModel.findById(createdBy).select('role');
+    if (!creator) throw new Error('Creator not found');
+    
     const event = new this.eventModel({
       ...dto,
       createdBy: new Types.ObjectId(createdBy),
@@ -33,7 +38,7 @@ export class EventsService {
     const saved = await event.save();
     
     // Trigger real-time notifications
-    this.sendEventNotifications(saved).catch(err => {
+    this.sendEventNotifications(saved, creator.role).catch(err => {
       console.error('Failed to send event notifications:', err);
     });
 
@@ -90,7 +95,7 @@ export class EventsService {
     return { message: 'Event removed' };
   }
 
-  private async sendEventNotifications(event: EventDocument) {
+  private async sendEventNotifications(event: EventDocument, creatorRole: string) {
     const notificationData = {
       message: `New ${event.type.toLowerCase()} event: ${event.title}`,
       type: 'EVENT_CREATED',
@@ -105,34 +110,61 @@ export class EventsService {
 
     let targetUserIds: string[] = [];
 
-    if (event.isAllClasses || event.type !== EventType.EXAM) {
-      // Notify all teachers and students
-      console.log(`Sending Broad notifications for event: ${event.title}`);
-      const users = await this.userModel.find({
-        role: { $in: [Role.TEACHER, Role.STUDENT] },
-        isActive: true,
-      }).select('_id');
-      targetUserIds = users.map((u) => u._id.toString());
-    } else {
-      // Specific EXAM event for specific classes
-      console.log(`Sending Specific EXAM notifications for event: ${event.title}`);
-      const classes = await this.classModel.find({
-        _id: { $in: event.applicableClasses },
-      });
+    // Determine who to notify based on creator's role
+    if (creatorRole === Role.ADMIN) {
+      // Admin created event - notify teachers and students
+      console.log(`Admin created event: ${event.title} - notifying teachers and students`);
+      if (event.isAllClasses || event.type !== EventType.EXAM) {
+        const users = await this.userModel.find({
+          role: { $in: [Role.TEACHER, Role.STUDENT] },
+          isActive: true,
+        }).select('_id');
+        targetUserIds = users.map((u) => u._id.toString());
+      } else {
+        // Specific EXAM event for specific classes
+        const classes = await this.classModel.find({
+          _id: { $in: event.applicableClasses },
+        });
 
-      const teacherIds = new Set<string>();
-      classes.forEach((c) => {
-        if (c.classTeacher) teacherIds.add(c.classTeacher.toString());
-        c.teachers?.forEach((t) => teacherIds.add(t.toString()));
-      });
+        const teacherIds = new Set<string>();
+        classes.forEach((c) => {
+          if (c.classTeacher) teacherIds.add(c.classTeacher.toString());
+          c.teachers?.forEach((t) => teacherIds.add(t.toString()));
+        });
 
-      const students = await this.userModel.find({
-        role: Role.STUDENT,
-        classId: { $in: event.applicableClasses },
-      }).select('_id');
+        const students = await this.userModel.find({
+          role: Role.STUDENT,
+          classId: { $in: event.applicableClasses },
+        }).select('_id');
 
-      const studentIds = students.map((s) => s._id.toString());
-      targetUserIds = Array.from(new Set([...teacherIds, ...studentIds]));
+        const studentIds = students.map((s) => s._id.toString());
+        targetUserIds = Array.from(new Set([...teacherIds, ...studentIds]));
+      }
+    } else if (creatorRole === Role.TEACHER) {
+      // Teacher created event - notify admin and students
+      console.log(`Teacher created event: ${event.title} - notifying admin and students`);
+      if (event.isAllClasses || event.type !== EventType.EXAM) {
+        const users = await this.userModel.find({
+          role: { $in: [Role.ADMIN, Role.STUDENT] },
+          isActive: true,
+        }).select('_id');
+        targetUserIds = users.map((u) => u._id.toString());
+      } else {
+        // Specific EXAM event for specific classes - notify admin and students in those classes
+        const students = await this.userModel.find({
+          role: Role.STUDENT,
+          classId: { $in: event.applicableClasses },
+        }).select('_id');
+
+        const admins = await this.userModel.find({
+          role: Role.ADMIN,
+          isActive: true,
+        }).select('_id');
+
+        const studentIds = students.map((s) => s._id.toString());
+        const adminIds = admins.map((a) => a._id.toString());
+        targetUserIds = Array.from(new Set([...adminIds, ...studentIds]));
+      }
     }
 
     console.log(`Recipients found: ${targetUserIds.length}`);
